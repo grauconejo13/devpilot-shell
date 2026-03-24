@@ -4,9 +4,10 @@ import { client } from "./apollo/client";
 import { AuthProvider } from "./auth/AuthContext";
 import ProtectedRoute from "./components/ProtectedRoute";
 import Layout from "./components/Layout";
+import Home from "./pages/Home";
+import Login from "./pages/Login";
+import Register from "./pages/Register";
 
-const Login = () => <h2>Login</h2>;
-const Register = () => <h2>Register</h2>;
 const ProjectsApp = () => <h2>Projects MFE</h2>;
 const AIReviewApp = () => <h2>AI Review MFE</h2>;
 
@@ -17,6 +18,7 @@ function App() {
         <BrowserRouter>
           <Layout>
             <Routes>
+              <Route path="/" element={<Home />} />
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />
 
