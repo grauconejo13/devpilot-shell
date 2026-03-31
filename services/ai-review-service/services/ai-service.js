@@ -5,19 +5,19 @@ const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
+
+// Core function
+
 export async function reviewCode(studentCode, language = null) {
-  // 1. Retrieve relevant rules
   const chunks = await retrieveRelevantChunks(studentCode, {
     language,
     topK: 5,
   });
 
-  // 2. Build context
   const context = chunks
     .map((c, i) => `Rule ${i + 1}: ${c.text}`)
     .join("\n");
 
-  // 3. Prompt 
   const prompt = `
 You are a strict senior code reviewer.
 
@@ -54,7 +54,6 @@ Return JSON in this EXACT format:
 }
 `;
 
-  // 4. Call OpenAI
   const response = await openai.chat.completions.create({
     model: "gpt-4o-mini",
     temperature: 0.2,
@@ -70,13 +69,12 @@ Return JSON in this EXACT format:
     ],
   });
 
-  let text = response.choices[0].message.content;
+  const text = response.choices[0].message.content;
 
-  // 5. JSON Parse 
   try {
     return JSON.parse(text);
   } catch (err) {
-    console.log("⚠️ JSON parse failed, raw output:");
+    console.log("JSON parse failed, raw output:");
     console.log(text);
 
     return {
@@ -86,4 +84,37 @@ Return JSON in this EXACT format:
       summary: "Failed to parse AI response",
     };
   }
+}
+
+// Retry Wrapper
+export async function generateReviewWithRetry(
+  studentCode,
+  language = null,
+  retries = 3
+) {
+  let lastError;
+
+  for (let i = 0; i < retries; i++) {
+    try {
+      const result = await reviewCode(studentCode, language);
+
+      if (result && typeof result.score === "number") {
+        return result;
+      }
+
+      throw new Error("Invalid AI response structure");
+    } catch (err) {
+      lastError = err;
+      console.log(`Attempt ${i + 1} failed`);
+    }
+  }
+
+  console.log("All retries failed:", lastError);
+
+  return {
+    issues: [],
+    suggestions: [],
+    score: 0,
+    summary: "AI failed after multiple retry attempts",
+  };
 }

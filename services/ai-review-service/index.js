@@ -1,14 +1,15 @@
-require("dotenv").config();
-const express = require("express");
-const { reviewCode } = require("./services/ai.service");
+import "dotenv/config";
+import express from "express";
+import { generateReviewWithRetry } from "./services/ai-service.js";
 
 const app = express();
 app.use(express.json());
 
 app.get("/", (req, res) => {
-  res.send("AI Review Service Running ");
+  res.send("AI Review Service Running");
 });
 
+// Main API Route
 app.post("/review", async (req, res) => {
   try {
     const { code, language } = req.body;
@@ -17,7 +18,7 @@ app.post("/review", async (req, res) => {
       return res.status(400).json({ error: "Code is required" });
     }
 
-    const result = await reviewCode(code, language);
+    const result = await generateReviewWithRetry(code, language);
 
     res.json(result);
   } catch (err) {
@@ -28,5 +29,5 @@ app.post("/review", async (req, res) => {
 
 const PORT = 5000;
 app.listen(PORT, () => {
-  console.log(` Server running on port ${PORT}`);
+  console.log(`Server running on port ${PORT}`);
 });
